@@ -10,8 +10,35 @@
 <link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%2310100f'/%3E%3Ctext x='90' y='120' font-size='90' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%23e8b84b'%3EV%3C/text%3E%3C/svg%3E">
 <link rel="manifest" href="data:application/json,%7B%22name%22%3A%22GTA%20V%20Tracker%22%2C%22short_name%22%3A%22GTA%20V%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2310100f%22%2C%22theme_color%22%3A%22%2310100f%22%2C%22start_url%22%3A%22.%22%7D">
 <title>GTA V &amp; Online — 100% &amp; Trophy Tracker</title>
+<script>
+  // Apply saved theme before paint (default light). Avoids flash for dark users.
+  try { if (localStorage.getItem("gtaV_theme") === "dark") document.documentElement.setAttribute("data-theme","dark"); } catch(e) {}
+</script>
 <style>
+  /* LIGHT THEME = default (regardless of system preference) */
   :root {
+    --bg: #f4efe6;
+    --panel: #ffffff;
+    --panel-2: #efe8da;
+    --line: #d9cfbd;
+    --ink: #2a241c;
+    --ink-dim: #6b6253;
+    --ink-faint: #978c79;
+    --sunset: #d9701f;       /* Los Santos sunset orange (darkened for light bg) */
+    --sunset-bright: #e08a12;
+    --teal: #1f857c;          /* palm / ocean accent */
+    --gold: #b8860b;
+    --silver: #7a848a;
+    --bronze: #9c5f2c;
+    --online: #b0306a;        /* online magenta */
+    --warn: #c4471f;
+    --shadow: rgba(60,45,20,.10);
+    --inset: #ece4d4;
+    --header-grad: linear-gradient(180deg, #fbf7ef 0%, #f4efe6 70%, #f4efe6 100%);
+    --hi: #e7dcc8;             /* open-group border highlight */
+    --radius: 4px;
+  }
+  [data-theme="dark"] {
     --bg: #10100f;
     --panel: #1a1916;
     --panel-2: #232019;
@@ -19,14 +46,18 @@
     --ink: #efe9dd;
     --ink-dim: #a89e8b;
     --ink-faint: #6f6757;
-    --sunset: #e8843c;       /* Los Santos sunset orange */
+    --sunset: #e8843c;
     --sunset-bright: #f5a623;
-    --teal: #3fa8a0;          /* palm / ocean accent */
+    --teal: #3fa8a0;
     --gold: #e8b84b;
     --silver: #b3bcc0;
     --bronze: #c08043;
-    --online: #c0407a;        /* online magenta */
+    --online: #c0407a;
     --warn: #d2552c;
+    --shadow: rgba(0,0,0,.35);
+    --inset: #0a0a09;
+    --header-grad: linear-gradient(180deg, #1c1813 0%, #14120f 60%, #10100f 100%);
+    --hi: #463f33;
     --radius: 4px;
   }
   * { box-sizing: border-box; margin: 0; padding: 0; }
@@ -42,7 +73,7 @@
 
   header {
     border-bottom: 1px solid var(--line);
-    background: linear-gradient(180deg, #1c1813 0%, #14120f 60%, #10100f 100%);
+    background: var(--header-grad);
     padding: 1.6rem 0 1.3rem; position: relative; overflow: hidden;
   }
   header::before {
@@ -64,7 +95,7 @@
   .bar-pct { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; }
   .bar-pct.completion { color: var(--sunset-bright); }
   .bar-pct.trophy { color: var(--gold); }
-  .bar-track { height: 9px; background: #0a0a09; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); }
+  .bar-track { height: 9px; background: var(--inset); border-radius: 20px; overflow: hidden; border: 1px solid var(--line); }
   .bar-fill { height: 100%; width: 0%; border-radius: 20px; transition: width .35s cubic-bezier(.4,0,.2,1); }
   .bar-fill.completion { background: linear-gradient(90deg, var(--sunset), var(--sunset-bright)); }
   .bar-fill.trophy { background: linear-gradient(90deg, var(--bronze), var(--gold)); }
@@ -88,7 +119,7 @@
   .view.active { display: block; }
 
   details.group { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: .7rem; overflow: hidden; }
-  details.group[open] { border-color: #463f33; }
+  details.group[open] { border-color: var(--hi); }
   details.group.online-group { border-left: 3px solid var(--online); }
   summary.group-head { list-style: none; cursor: pointer; padding: .8rem .95rem; display: flex; align-items: center; gap: .7rem; user-select: none; }
   summary.group-head::-webkit-details-marker { display: none; }
@@ -108,10 +139,10 @@
   .char.T { background: #4a2718; color: #e89a6a; }
   .char.any { background: #2a2a2a; color: #9a9a9a; }
 
-  .item { display: flex; align-items: flex-start; gap: .65rem; padding: .5rem 0; border-bottom: 1px solid #221f19; }
+  .item { display: flex; align-items: flex-start; gap: .65rem; padding: .5rem 0; border-bottom: 1px solid var(--line); }
   .item:last-child { border-bottom: none; }
   .item label { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; flex: 1; }
-  input[type=checkbox] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 16px; height: 16px; margin-top: .18rem; border: 1px solid var(--ink-faint); border-radius: 3px; background: #0a0a09; cursor: pointer; position: relative; transition: all .12s; }
+  input[type=checkbox] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 16px; height: 16px; margin-top: .18rem; border: 1px solid var(--ink-faint); border-radius: 3px; background: var(--inset); cursor: pointer; position: relative; transition: all .12s; }
   input[type=checkbox]:hover { border-color: var(--sunset-bright); }
   input[type=checkbox]:checked { background: var(--sunset); border-color: var(--sunset-bright); }
   input[type=checkbox]:checked::after { content: "✓"; position: absolute; top: -2px; left: 2px; color: #10100f; font-size: 12px; font-weight: 900; }
@@ -121,8 +152,8 @@
   .item-titleRow { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .4rem; }
   .item-title { font-size: .85rem; color: var(--ink); }
   .item.checked .item-title { color: var(--ink-faint); text-decoration: line-through; }
-  .item-sub { font-size: .72rem; color: var(--ink-dim); margin-top: .2rem; line-height: 1.45; }
-  .est { font-size: .66rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; background: #0a0a09; border: 1px solid var(--line); border-radius: 3px; padding: .1rem .4rem; margin-top: .1rem; flex-shrink: 0; align-self: flex-start; }
+  .item-sub { display: block; font-size: .72rem; color: var(--ink-dim); margin-top: .2rem; line-height: 1.45; }
+  .est { font-size: .66rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; background: var(--inset); border: 1px solid var(--line); border-radius: 3px; padding: .1rem .4rem; margin-top: .1rem; flex-shrink: 0; align-self: flex-start; }
 
   .tag { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .12rem .4rem; border-radius: 3px; white-space: nowrap; line-height: 1.3; }
   .tag.plat { background: #2a2336; color: #c3a9e8; }
@@ -132,9 +163,9 @@
   .tag.miss { background: #3d1d12; color: #e08a5a; }
   .tag.online { background: #3a1228; color: #e87ab0; }
 
-  .detail { font-size: .74rem; color: var(--ink-dim); line-height: 1.55; margin-top: .4rem; padding: .55rem .7rem; background: #0a0a09; border-left: 2px solid var(--sunset); border-radius: 0 3px 3px 0; }
+  .detail { font-size: .74rem; color: var(--ink-dim); line-height: 1.55; margin-top: .4rem; padding: .55rem .7rem; background: var(--inset); border-left: 2px solid var(--sunset); border-radius: 0 3px 3px 0; }
   .detail strong { color: var(--ink); }
-  .toggle-detail { background: none; border: none; color: var(--teal); font: inherit; font-size: .7rem; cursor: pointer; padding: 0; margin-top: .25rem; text-decoration: underline; text-underline-offset: 2px; }
+  .toggle-detail { display: block; background: none; border: none; color: var(--teal); font: inherit; font-size: .7rem; cursor: pointer; padding: 0; margin-top: .35rem; text-decoration: underline; text-underline-offset: 2px; }
   .toggle-detail:hover { color: #5fc8bf; }
   .detail.hidden { display: none; }
 
@@ -180,6 +211,7 @@
       <button class="btn" id="exportBtn">Export</button>
       <button class="btn" id="importBtn">Import</button>
       <button class="btn danger" id="reset">Reset</button>
+      <button class="btn" id="themeBtn" title="Toggle light/dark theme">🌙 Dark</button>
       <input type="file" id="importFile" accept="application/json" style="display:none">
       <span class="savenote" id="saveNote">Auto-saved locally</span>
     </div>
@@ -643,6 +675,29 @@ document.getElementById("importFile").onchange = e => {
   };
   r.readAsText(file);
   e.target.value = "";
+};
+
+// ---------- THEME (default light, ignores system preference) ----------
+const THEME_KEY = "gtaV_theme";
+function applyTheme(theme) {
+  const btn = document.getElementById("themeBtn");
+  if (theme === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    if (btn) btn.textContent = "☀️ Light";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#10100f");
+  } else {
+    document.documentElement.removeAttribute("data-theme");
+    if (btn) btn.textContent = "🌙 Dark";
+    document.querySelector('meta[name="theme-color"]')?.setAttribute("content", "#f4efe6");
+  }
+}
+let currentTheme = "light";
+try { currentTheme = localStorage.getItem(THEME_KEY) || "light"; } catch(e) {}
+applyTheme(currentTheme);
+document.getElementById("themeBtn").onclick = () => {
+  currentTheme = (currentTheme === "dark") ? "light" : "dark";
+  applyTheme(currentTheme);
+  try { localStorage.setItem(THEME_KEY, currentTheme); } catch(e) {}
 };
 
 buildView("completion","completionGroups");
