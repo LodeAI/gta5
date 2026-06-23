@@ -1,0 +1,654 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="GTA V Tracker">
+<meta name="theme-color" content="#10100f">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 180 180'%3E%3Crect width='180' height='180' fill='%2310100f'/%3E%3Ctext x='90' y='120' font-size='90' font-family='monospace' font-weight='bold' text-anchor='middle' fill='%23e8b84b'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="manifest" href="data:application/json,%7B%22name%22%3A%22GTA%20V%20Tracker%22%2C%22short_name%22%3A%22GTA%20V%22%2C%22display%22%3A%22standalone%22%2C%22background_color%22%3A%22%2310100f%22%2C%22theme_color%22%3A%22%2310100f%22%2C%22start_url%22%3A%22.%22%7D">
+<title>GTA V &amp; Online — 100% &amp; Trophy Tracker</title>
+<style>
+  :root {
+    --bg: #10100f;
+    --panel: #1a1916;
+    --panel-2: #232019;
+    --line: #38332a;
+    --ink: #efe9dd;
+    --ink-dim: #a89e8b;
+    --ink-faint: #6f6757;
+    --sunset: #e8843c;       /* Los Santos sunset orange */
+    --sunset-bright: #f5a623;
+    --teal: #3fa8a0;          /* palm / ocean accent */
+    --gold: #e8b84b;
+    --silver: #b3bcc0;
+    --bronze: #c08043;
+    --online: #c0407a;        /* online magenta */
+    --warn: #d2552c;
+    --radius: 4px;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body {
+    background: var(--bg);
+    color: var(--ink);
+    font-family: ui-monospace, "SF Mono", "Cascadia Mono", Menlo, Consolas, monospace;
+    line-height: 1.5; -webkit-font-smoothing: antialiased;
+    padding-bottom: 6rem;
+  }
+  .wrap { max-width: 960px; margin: 0 auto; padding: 0 1.1rem; }
+
+  header {
+    border-bottom: 1px solid var(--line);
+    background: linear-gradient(180deg, #1c1813 0%, #14120f 60%, #10100f 100%);
+    padding: 1.6rem 0 1.3rem; position: relative; overflow: hidden;
+  }
+  header::before {
+    content: ""; position: absolute; top: -40%; right: -10%; width: 320px; height: 320px;
+    background: radial-gradient(circle, rgba(232,132,60,.18), transparent 65%);
+    pointer-events: none;
+  }
+  .eyebrow { font-size: .68rem; letter-spacing: .28em; text-transform: uppercase; color: var(--sunset-bright); font-weight: 700; }
+  h1 { font-size: 1.55rem; font-weight: 700; letter-spacing: -.01em; margin: .35rem 0 .15rem; position: relative; }
+  .sub { color: var(--ink-dim); font-size: .8rem; position: relative; }
+  .sub b { color: var(--ink); font-weight: 600; }
+
+  .bars { display: grid; grid-template-columns: 1fr 1fr; gap: .9rem; margin-top: 1.3rem; position: relative; }
+  @media (max-width: 640px) { .bars { grid-template-columns: 1fr; } }
+  .bar-card { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); padding: .85rem .95rem; }
+  .bar-head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: .55rem; }
+  .bar-title { font-size: .72rem; letter-spacing: .12em; text-transform: uppercase; color: var(--ink-dim); font-weight: 700; }
+  .bar-sub { font-size: .6rem; color: var(--ink-faint); display: block; margin-top: .12rem; letter-spacing: .02em; }
+  .bar-pct { font-size: 1.45rem; font-weight: 700; font-variant-numeric: tabular-nums; }
+  .bar-pct.completion { color: var(--sunset-bright); }
+  .bar-pct.trophy { color: var(--gold); }
+  .bar-track { height: 9px; background: #0a0a09; border-radius: 20px; overflow: hidden; border: 1px solid var(--line); }
+  .bar-fill { height: 100%; width: 0%; border-radius: 20px; transition: width .35s cubic-bezier(.4,0,.2,1); }
+  .bar-fill.completion { background: linear-gradient(90deg, var(--sunset), var(--sunset-bright)); }
+  .bar-fill.trophy { background: linear-gradient(90deg, var(--bronze), var(--gold)); }
+  .bar-count { font-size: .7rem; color: var(--ink-faint); margin-top: .45rem; font-variant-numeric: tabular-nums; }
+
+  .toolbar { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; margin: 1.3rem 0 .4rem; position: relative; }
+  .btn { background: var(--panel-2); color: var(--ink-dim); border: 1px solid var(--line); border-radius: var(--radius); padding: .4rem .7rem; font: inherit; font-size: .72rem; cursor: pointer; transition: all .15s; }
+  .btn:hover { color: var(--ink); border-color: var(--sunset); }
+  .btn.danger:hover { color: #fff; border-color: var(--warn); background: var(--warn); }
+  .savenote { font-size: .68rem; color: var(--ink-faint); margin-left: auto; }
+
+  .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--line); margin-top: 1rem; position: relative; overflow-x: auto; }
+  .tab { background: none; border: none; border-bottom: 2px solid transparent; color: var(--ink-faint); font: inherit; font-size: .82rem; font-weight: 600; padding: .7rem 1rem; cursor: pointer; transition: all .15s; white-space: nowrap; }
+  .tab:hover { color: var(--ink-dim); }
+  .tab.active { color: var(--ink); }
+  .tab[data-view="completion"].active { border-bottom-color: var(--sunset-bright); }
+  .tab[data-view="trophy"].active { border-bottom-color: var(--gold); }
+  .tab[data-view="online"].active { border-bottom-color: var(--online); }
+
+  .view { display: none; padding-top: 1.2rem; }
+  .view.active { display: block; }
+
+  details.group { background: var(--panel); border: 1px solid var(--line); border-radius: var(--radius); margin-bottom: .7rem; overflow: hidden; }
+  details.group[open] { border-color: #463f33; }
+  details.group.online-group { border-left: 3px solid var(--online); }
+  summary.group-head { list-style: none; cursor: pointer; padding: .8rem .95rem; display: flex; align-items: center; gap: .7rem; user-select: none; }
+  summary.group-head::-webkit-details-marker { display: none; }
+  .chev { color: var(--ink-faint); transition: transform .2s; font-size: .7rem; flex-shrink: 0; }
+  details[open] .chev { transform: rotate(90deg); }
+  .g-name { font-weight: 700; font-size: .92rem; flex: 1; min-width: 0; }
+  .g-meta { font-size: .68rem; color: var(--ink-faint); font-variant-numeric: tabular-nums; white-space: nowrap; flex-shrink: 0; }
+  @media (max-width: 560px) { .g-meta { display: none; } }
+  .g-prog { font-size: .68rem; font-variant-numeric: tabular-nums; color: var(--ink-dim); background: var(--panel-2); border: 1px solid var(--line); border-radius: 20px; padding: .12rem .55rem; flex-shrink: 0; }
+  .g-prog.done { color: var(--sunset-bright); border-color: var(--sunset); }
+  .group-body { padding: .2rem .95rem .85rem; border-top: 1px solid var(--line); }
+
+  /* character pill */
+  .char { font-size: .58rem; font-weight: 700; padding: .08rem .4rem; border-radius: 3px; letter-spacing: .04em; }
+  .char.M { background: #1d3a4d; color: #74c0e8; }
+  .char.F { background: #1d4029; color: #6fc97f; }
+  .char.T { background: #4a2718; color: #e89a6a; }
+  .char.any { background: #2a2a2a; color: #9a9a9a; }
+
+  .item { display: flex; align-items: flex-start; gap: .65rem; padding: .5rem 0; border-bottom: 1px solid #221f19; }
+  .item:last-child { border-bottom: none; }
+  .item label { display: flex; align-items: flex-start; gap: .6rem; cursor: pointer; flex: 1; }
+  input[type=checkbox] { appearance: none; -webkit-appearance: none; flex-shrink: 0; width: 16px; height: 16px; margin-top: .18rem; border: 1px solid var(--ink-faint); border-radius: 3px; background: #0a0a09; cursor: pointer; position: relative; transition: all .12s; }
+  input[type=checkbox]:hover { border-color: var(--sunset-bright); }
+  input[type=checkbox]:checked { background: var(--sunset); border-color: var(--sunset-bright); }
+  input[type=checkbox]:checked::after { content: "✓"; position: absolute; top: -2px; left: 2px; color: #10100f; font-size: 12px; font-weight: 900; }
+  .view[id$="online"] input[type=checkbox]:checked { background: var(--online); border-color: var(--online); }
+  .view[id$="trophy"] input[type=checkbox]:checked { background: var(--gold); border-color: var(--gold); }
+  .item-main { flex: 1; min-width: 0; }
+  .item-titleRow { display: flex; flex-wrap: wrap; align-items: center; gap: .35rem .4rem; }
+  .item-title { font-size: .85rem; color: var(--ink); }
+  .item.checked .item-title { color: var(--ink-faint); text-decoration: line-through; }
+  .item-sub { font-size: .72rem; color: var(--ink-dim); margin-top: .2rem; line-height: 1.45; }
+  .est { font-size: .66rem; color: var(--ink-faint); white-space: nowrap; font-variant-numeric: tabular-nums; background: #0a0a09; border: 1px solid var(--line); border-radius: 3px; padding: .1rem .4rem; margin-top: .1rem; flex-shrink: 0; align-self: flex-start; }
+
+  .tag { display: inline-block; font-size: .6rem; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; padding: .12rem .4rem; border-radius: 3px; white-space: nowrap; line-height: 1.3; }
+  .tag.plat { background: #2a2336; color: #c3a9e8; }
+  .tag.gold { background: #3a300c; color: var(--gold); }
+  .tag.silver { background: #2a3034; color: var(--silver); }
+  .tag.bronze { background: #3a2613; color: #d99a63; }
+  .tag.miss { background: #3d1d12; color: #e08a5a; }
+  .tag.online { background: #3a1228; color: #e87ab0; }
+
+  .detail { font-size: .74rem; color: var(--ink-dim); line-height: 1.55; margin-top: .4rem; padding: .55rem .7rem; background: #0a0a09; border-left: 2px solid var(--sunset); border-radius: 0 3px 3px 0; }
+  .detail strong { color: var(--ink); }
+  .toggle-detail { background: none; border: none; color: var(--teal); font: inherit; font-size: .7rem; cursor: pointer; padding: 0; margin-top: .25rem; text-decoration: underline; text-underline-offset: 2px; }
+  .toggle-detail:hover { color: #5fc8bf; }
+  .detail.hidden { display: none; }
+
+  .note { background: var(--panel-2); border: 1px solid var(--line); border-left: 3px solid var(--warn); border-radius: var(--radius); padding: .8rem .95rem; margin-bottom: 1.1rem; font-size: .77rem; color: var(--ink-dim); line-height: 1.6; }
+  .note strong { color: var(--ink); }
+  .note.info { border-left-color: var(--teal); }
+  .note.online { border-left-color: var(--online); }
+
+  footer { border-top: 1px solid var(--line); margin-top: 2rem; padding: 1.2rem 0; font-size: .68rem; color: var(--ink-faint); line-height: 1.7; }
+  footer a { color: var(--teal); }
+  .toast { position: fixed; bottom: 1.2rem; left: 50%; transform: translateX(-50%) translateY(2rem); background: var(--sunset); color: #10100f; font-size: .76rem; font-weight: 700; padding: .55rem 1.1rem; border-radius: 20px; opacity: 0; pointer-events: none; transition: all .25s; z-index: 50; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+</style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <div class="eyebrow">Grand Theft Auto V · Enhanced Edition</div>
+    <h1>100% · Trophies · Online Tracker</h1>
+    <div class="sub">PS5 Pro · <b>78 trophies</b> (1 Platinum · 3 Gold · 16 Silver · 58 Bronze*) · story 100% + online grind</div>
+    <div class="bars">
+      <div class="bar-card">
+        <div class="bar-head">
+          <span class="bar-title">100% Completion<span class="bar-sub">in-game story checklist</span></span>
+          <span class="bar-pct completion" id="pctCompletion">0%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill completion" id="fillCompletion"></div></div>
+        <div class="bar-count" id="countCompletion">0 / 0 items</div>
+      </div>
+      <div class="bar-card">
+        <div class="bar-head">
+          <span class="bar-title">Trophies<span class="bar-sub">story + online, all 78</span></span>
+          <span class="bar-pct trophy" id="pctTrophy">0%</span>
+        </div>
+        <div class="bar-track"><div class="bar-fill trophy" id="fillTrophy"></div></div>
+        <div class="bar-count" id="countTrophy">0 / 0 trophies</div>
+      </div>
+    </div>
+    <div class="toolbar">
+      <button class="btn" id="expandAll">Expand all</button>
+      <button class="btn" id="collapseAll">Collapse all</button>
+      <button class="btn" id="toggleAllDetails">Show all details</button>
+      <button class="btn" id="exportBtn">Export</button>
+      <button class="btn" id="importBtn">Import</button>
+      <button class="btn danger" id="reset">Reset</button>
+      <input type="file" id="importFile" accept="application/json" style="display:none">
+      <span class="savenote" id="saveNote">Auto-saved locally</span>
+    </div>
+    <div class="tabs">
+      <button class="tab active" data-view="completion">100% Checklist</button>
+      <button class="tab" data-view="trophy">All Trophies</button>
+      <button class="tab" data-view="online">GTA Online</button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <section class="view active" id="view-completion">
+    <div class="note info">
+      <strong>The official 100% checklist.</strong> Five categories: 69 story missions, 20 specific Strangers &amp; Freaks, 42 of 61 Hobbies &amp; Pastimes, 14 of ~60 Random Events, and 16 of 30 Misc tasks. Completing it unlocks the <em>Career Criminal</em> trophy. <strong>Pick ending C</strong> ("Something Sensible") — endings A/B lock you out of post-story content needed for 100%. Keep a manual save after "The Big Score." Gold medals are NOT required for 100% (they're for <em>Solid Gold, Baby!</em>).
+    </div>
+    <div id="completionGroups"></div>
+  </section>
+
+  <section class="view" id="view-trophy">
+    <div class="note">
+      <strong>All 78 PS5 trophies.</strong> Story + Online combined into one bar. Online trophies are tagged <span class="tag online">ONLINE</span>. <strong>The platinum (Los Santos Legend) requires the Online trophies too</strong> — including Rank 100, Numero Uno, Criminal Mastermind, and Decorated, which together are the bulk of the ~150+ hr platinum. A few story trophies are missable; flagged in red.
+    </div>
+    <div id="trophyGroups"></div>
+  </section>
+
+  <section class="view" id="view-online">
+    <div class="note online">
+      <strong>GTA Online has no "100%."</strong> It's open-ended — ranks, unlocks, and activities with no defined endpoint, and much of it requires other players or a paid grind. This tab tracks the <strong>finite Online trophies</strong> only (the same ones counted in the All Trophies bar), grouped by type so you can see what's left for the platinum. It does <em>not</em> feed the orange 100% bar, since Online isn't part of story completion. Progress here is also reflected in the gold Trophy bar.
+    </div>
+    <div id="onlineGroups"></div>
+  </section>
+</main>
+
+<footer class="wrap">
+  Sources: PSNProfiles (trophy list + Gold/100% guide), gta.fandom.com &amp; gtabase.com (100% checklist + per-trophy grades), PlayStationTrophies.org (Career Criminal + per-trophy grades). All 78 trophies enumerated with grades verified per-trophy June 2026. *Note: per-trophy sources grade 16 trophies Silver / 58 Bronze, while PSNProfiles' summary tile says 15/59 — the individual grades here match the per-trophy pages; the one-trophy aggregate difference is a known summary quirk and doesn't affect tracking. Time estimates are rough planning ranges.<br>
+  Saved in this browser via localStorage. On iPhone: open in Safari, then Share → "Add to Home Screen" and launch from the icon to avoid Safari's ~7-day storage eviction. Use Export for a JSON backup.
+</footer>
+
+<div class="toast" id="toast">Saved</div>
+
+<script>
+const DATA = {
+  completion: [
+    {
+      group: "Story Missions", meta: "69 missions · collapsed by act",
+      items: [
+        { id:"v_prologue", title:"Prologue + Franklin intro", sub:"Prologue · Franklin and Lamar · Repossession · Complications · Father/Son", est:"~45 min" },
+        { id:"v_act1a", title:"Setup arc", sub:"Chop · Marriage Counseling · Daddy's Little Girl · Friend Request · The Long Stretch · This Is Politics", est:"~1 hr" },
+        { id:"v_jewel", title:"Jewel Store Job (heist 1)", sub:"Casing the Jewel Store · BZ Gas Grenades · Carbine Rifles · The Jewel Store Job", est:"~45 min" },
+        { id:"v_trevorintro", title:"Trevor introduction", sub:"Mr. Philips · Trevor Philips Industries · Nervous Ron · Crystal Maze · Friends Reunited", est:"~1 hr" },
+        { id:"v_act2a", title:"Reunited / spreading out", sub:"Fame or Shame · Dead Man Walking · Did Somebody Say Yoga? · Three's Company · By the Book · etc.", est:"~1.5 hrs" },
+        { id:"v_assassinations", title:"Lester's 5 Assassinations (Franklin)", sub:"Hotel · Multi Target · Vice · Bus · Construction — REQUIRED for 100%", est:"~40 min", detail:"Do the Hotel Assassination during the story, then the other 4 AFTER the main story for the stock-market payoff. They are mandatory for Career Criminal. Buy stocks per the well-known BAWSAQ/LCN guide to multiply your money." },
+        { id:"v_merryweather", title:"Merryweather Heist + lead-up", sub:"Trevor missions · Minor Turbulence · Paleto Score setup", est:"~1 hr" },
+        { id:"v_paleto", title:"The Paleto Score (heist)", sub:"Military Hardware · Predator · The Paleto Score", est:"~30 min" },
+        { id:"v_bureau", title:"Bureau Raid arc", sub:"FIB missions · Monkey Business · The Wrap Up · Hang Ten · The Bureau Raid (pick a crew approach)", est:"~1.5 hrs" },
+        { id:"v_bigscore", title:"The Big Score (final heist)", sub:"Planning Boards prep · The Big Score (choose subtle or obvious)", est:"~45 min", detail:"SAVE manually after this mission before the finale." },
+        { id:"v_finale", title:"Finale — pick ENDING C", sub:"Something Sensible (Ending C). A and B permanently lock 100% content.", est:"~30 min", detail:"Ending C keeps all three protagonists alive and accessible, which you need for post-story 100% tasks and other trophies. Confirmed across all guides." },
+      ]
+    },
+    {
+      group: "Strangers & Freaks", meta: "all of Franklin's · 20 award progress",
+      items: [
+        { id:"v_sf_barry", title:"Barry — Grass Roots (4)", sub:"Grass Roots (Franklin) · The Pickup · The Drag · The Smoke-In", est:"~25 min", detail:"The Pickup and The Drag award no % themselves but must be done to reach the next ones. Franklin smokes weed and fights off hallucinated enemies (clowns, aliens)." },
+        { id:"v_sf_beverly", title:"Beverly — Paparazzo (6)", sub:"Paparazzo · The Sex Tape · The Partnership · The Meltdown · The Highness · Reality Check", est:"~40 min", detail:"Paparazzo and The Highness award no % but gate the rest. Reality Check is the finale (chase/decide the celebrity's fate)." },
+        { id:"v_sf_dom", title:"Dom — Risk series (4)", sub:"Risk Assessment · Liquidity Risk · Targeted Risk · Uncalculated Risk", est:"~30 min", detail:"Uncalculated Risk only unlocks after the other three AND all 13 Parachute Jumps are complete. Extreme-sports themed." },
+        { id:"v_sf_dreyfuss", title:"Peter Dreyfuss — A Starlet in Vinewood (1)", sub:"Unlocks after all 50 Letter Scraps collected", est:"~10 min" },
+        { id:"v_sf_hao", title:"Hao — Shift Work (1)", sub:"Win Hao's street race (Franklin)", est:"~10 min" },
+        { id:"v_sf_maryann", title:"Mary-Ann — Exercising Demons (1)", sub:"Exercising Demons (Franklin) — beat her in a triathlon-style race", est:"~10 min" },
+        { id:"v_sf_omega", title:"Omega — Far Out + The Final Frontier (2)", sub:"Far Out, then The Final Frontier (after all 50 Spaceship Parts)", est:"~15 min" },
+        { id:"v_sf_tonya", title:"Tonya — Pulling Favors (5)", sub:"Pulling Favors · Pulling Another Favor · Pulling Favors Again · Still Pulling Favors · Pulling One Last Favor", est:"~40 min", detail:"Franklin's tow-truck missions. Some entries can be slow to re-appear on the map — call Tonya or wait/skip time to re-trigger if one doesn't show." },
+      ]
+    },
+    {
+      group: "Hobbies & Pastimes", meta: "42 of 61 required",
+      items: [
+        { id:"v_para", title:"All 13 Parachute Jumps", sub:"7 helicopter + 6 base jumps", est:"~1 hr", detail:"Also a prerequisite for Dom's 'Uncalculated Risk' S&F mission." },
+        { id:"v_flight", title:"Flight School — all 12 lessons (medal each)", sub:"At the airfield", est:"~1 hr" },
+        { id:"v_shooting", title:"Shooting Range — 3 medals × 6 challenges", sub:"Ammu-Nation", est:"~30 min" },
+        { id:"v_offroad", title:"Off-Road Races — win all 6", sub:"", est:"~40 min" },
+        { id:"v_street", title:"Street Races — win all 5", sub:"", est:"~40 min" },
+        { id:"v_seashark", title:"Sea Races (Seashark) — win all 4", sub:"", est:"~30 min" },
+        { id:"v_tri", title:"Triathlons — win all 3", sub:"Last one (Coyote Cross Country) is a ~25-min mash-X endurance slog", est:"~40 min", detail:"Have full stamina; the third triathlon is the classic 99.x% blocker. Tap the run button steadily for the duration." },
+        { id:"v_sports", title:"Win each sport: Golf, Tennis, Darts", sub:"Golf: 9 holes even/under par. Tennis: win one game. Darts: beat opponent.", est:"~40 min" },
+        { id:"v_dance", title:"Private dance at the Strip Club", sub:"Vanilla Unicorn", est:"~5 min" },
+      ]
+    },
+    {
+      group: "Random Events", meta: "14 of ~60 required",
+      items: [
+        { id:"v_random", title:"Complete any 14 Random Events", sub:"Blue dot = help, red dot = stop. Any 14 count.", est:"~1 hr", detail:"These appear while free-roaming with any protagonist. You only need 14 of the ~60; they trigger naturally as you drive around doing everything else. No specific ones required." },
+      ]
+    },
+    {
+      group: "Miscellaneous (16 of 30)", meta: "collectibles + activities",
+      items: [
+        { id:"v_spaceship", title:"Collect all 50 Spaceship Parts", sub:"Unlocks Omega's S&F + 'From Beyond the Stars'", est:"~2 hrs", detail:"Buy a Buzzard or use a helicopter. Many are underwater/rooftop. Also tied to the trophy of the same name." },
+        { id:"v_letters", title:"Collect all 50 Letter Scraps", sub:"Unlocks Dreyfuss S&F + 'A Mystery, Solved'", est:"~1.5 hrs" },
+        { id:"v_stuntjumps", title:"Complete 25 of 50 Stunt Jumps", sub:"(all 50 = 'Show Off' trophy)", est:"~1.5 hrs", detail:"Only 25 needed for 100%. Do all 50 if you want the Show Off trophy — flagged in the trophy tab." },
+        { id:"v_underbridge", title:"25 of 50 Under the Bridge", sub:"Fly under 50 bridges (25 for 100%)", est:"~1.5 hrs", detail:"Under the Bridge (50) + Knife Flights (8) together = 'Close Shave' trophy." },
+        { id:"v_knife", title:"8 of 15 Knife Flights", sub:"Fly very low/close in a plane", est:"~30 min" },
+        { id:"v_properties", title:"Purchase any 5 properties", sub:"Vanilla Unicorn does NOT count", est:"~15 min", detail:"Buy revenue-generating businesses; cheap ones like Downtown Cab Co. and McKenzie Field Hangar double as trophy unlocks (All's Fare / TP Industries Arms Race)." },
+        { id:"v_website", title:"Purchase a vehicle from a website", sub:"Any in-game car site", est:"~5 min" },
+        { id:"v_chop", title:"Walk & play fetch with Chop", sub:"Use the iFruit dog app or just play with Chop", est:"~5 min" },
+        { id:"v_bootycall", title:"Complete a Booty Call", sub:"", est:"~5 min" },
+        { id:"v_prostitute", title:"Receive a prostitute service", sub:"", est:"~5 min" },
+        { id:"v_holdup", title:"Hold up a store", sub:"Rob any convenience store", est:"~5 min" },
+        { id:"v_cinema", title:"Visit the Cinema", sub:"", est:"~5 min" },
+        { id:"v_friendbar", title:"Friend activity: Bar", sub:"Take a friend out drinking", est:"~5 min" },
+        { id:"v_friendcinema", title:"Friend activity: Cinema", sub:"", est:"~5 min" },
+        { id:"v_friendstrip", title:"Friend activity: Strip Club", sub:"", est:"~5 min" },
+        { id:"v_frienddarts", title:"Friend activity: Darts", sub:"", est:"~5 min" },
+      ]
+    },
+  ],
+
+  trophy: [
+    {
+      group: "Platinum", meta: "1 trophy",
+      items: [
+        { id:"v01", title:"Los Santos Legend", tag:["plat","Platinum"], sub:"Unlock all other 77 trophies", detail:"Requires the full Online + DLC trophy sets (Heists, Doomsday, Rockstar Editor). Realistically 150+ hours; only ~5% of players have it." },
+      ]
+    },
+    {
+      group: "Story — milestones", meta: "story progress + 100%",
+      items: [
+        { id:"v02", title:"Welcome to Los Santos", tag:["bronze","Bronze"], sub:"Complete 'Franklin and Lamar' (auto)" },
+        { id:"v03", title:"A Friendship Resurrected", tag:["bronze","Bronze"], sub:"Complete 'Fame or Shame'" },
+        { id:"v04", title:"A Fair Day's Pay", tag:["bronze","Bronze"], sub:"Complete 'Caida Libre'" },
+        { id:"v05", title:"The Moment of Truth", tag:["bronze","Bronze"], sub:"Complete 'Bury the Hatchet'" },
+        { id:"v06", title:"To Live or Die in Los Santos", tag:["silver","Silver"], extraTag:["miss",""], sub:"Complete the final mission", detail:"Pick Ending C ('Something Sensible'). A or B kill a protagonist and lock 100% content / other trophies." },
+        { id:"v13", title:"Solid Gold, Baby!", tag:["gold","Gold"], sub:"Earn 70 Gold Medals (Missions + S&F)", detail:"Gold reqs save individually across replays. Not needed for 100%, but needed for platinum." },
+        { id:"v14", title:"Career Criminal", tag:["gold","Gold"], sub:"Attain 100% completion", detail:"Tied to the entire 100% Checklist tab." },
+        { id:"v15", title:"San Andreas Sightseer", tag:["silver","Silver"], sub:"Explore all of Los Santos & Blaine County", detail:"Reveal ~95%+ of the map incl. offshore rock islands. Fly/boat the edges." },
+        { id:"v51", title:"A New Perspective", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Play 15 hours in first-person mode", detail:"Easy to forget — switch to first-person and accumulate 15 hrs. Start early." },
+      ]
+    },
+    {
+      group: "Story — heist completions", meta: "auto from story",
+      items: [
+        { id:"v07", title:"Diamond Hard", tag:["bronze","Bronze"], sub:"Complete 'The Jewel Store Job'" },
+        { id:"v08", title:"Subversive", tag:["bronze","Bronze"], sub:"Complete 'The Merryweather Heist'" },
+        { id:"v09", title:"Blitzed", tag:["bronze","Bronze"], sub:"Complete 'Blitz Play'" },
+        { id:"v10", title:"Small Town, Big Job", tag:["bronze","Bronze"], sub:"Complete 'The Paleto Score'" },
+        { id:"v11", title:"The Government Gimps", tag:["bronze","Bronze"], sub:"Complete 'The Bureau Raid'" },
+        { id:"v12", title:"The Big One!", tag:["bronze","Bronze"], sub:"Complete 'The Big Score'", detail:"Save manually right after this before the finale." },
+      ]
+    },
+    {
+      group: "Story — collectibles & challenges", meta: "",
+      items: [
+        { id:"v18", title:"Multi-Disciplined", tag:["silver","Silver"], sub:"Gold medal in all applicable Hobbies & Pastimes" },
+        { id:"v19", title:"From Beyond the Stars", tag:["bronze","Bronze"], sub:"Collect & return all 50 Spaceship Parts" },
+        { id:"v20", title:"A Mystery, Solved", tag:["bronze","Bronze"], sub:"All 50 Letter Scraps + solve Leonora Johnson" },
+        { id:"v21", title:"Waste Management", tag:["bronze","Bronze"], sub:"Buy the Old Dock + collect all 30 Nuclear Waste", detail:"Sonar Collections Dock ($250k). Not part of 100%." },
+        { id:"v22", title:"Red Mist", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Complete all 5 Rampages (Trevor)" },
+        { id:"v23", title:"Show Off", tag:["bronze","Bronze"], sub:"Complete all 50 Stunt Jumps", detail:"100% only needs 25." },
+        { id:"v24", title:"Kifflom!", tag:["silver","Silver"], extraTag:["miss",""], sub:"Complete the Epsilon Program", detail:"Includes walking ~5 in-game days in Epsilon robes. Not part of 100%." },
+        { id:"v33", title:"Close Shave", tag:["bronze","Bronze"], sub:"All Under the Bridge (50) + all Knife Flights (8)" },
+      ]
+    },
+    {
+      group: "Story — misc one-offs", meta: "",
+      items: [
+        { id:"v16", title:"All's Fare in Love and War", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Buy Downtown Cab Co. (Franklin) + do a private fare" },
+        { id:"v17", title:"TP Industries Arms Race", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Buy McKenzie Field Hangar (Trevor) + win the arms race" },
+        { id:"v25", title:"Three Man Army", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Survive 3 min at 3+ stars with all 3 characters together, off-mission", detail:"Gather M/F/T on a rooftop, draw cops, hold out." },
+        { id:"v26", title:"Out of Your Depth", tag:["bronze","Bronze"], sub:"Get attacked by a shark in deep water" },
+        { id:"v27", title:"Altruist Acolyte", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Deliver a victim to the Altruist Cult (Trevor)", detail:"During certain random events, choose to deliver the NPC to the Altruist camp. Limited chances." },
+        { id:"v28", title:"A Lot of Cheddar", tag:["bronze","Bronze"], sub:"Spend $200 million total across all 3 characters", detail:"Stock buy/sell churn counts toward spend." },
+        { id:"v29", title:"Trading Pure Alpha", tag:["bronze","Bronze"], sub:"Make a net profit in the stock market" },
+        { id:"v30", title:"Pimp My Sidearm", tag:["bronze","Bronze"], sub:"Fully mod a weapon (incl. color)" },
+        { id:"v31", title:"Wanted: Alive or Alive", tag:["bronze","Bronze"], extraTag:["miss",""], sub:"Deliver a bail-bond target alive (Trevor → Maude)" },
+        { id:"v32", title:"Los Santos Customs", tag:["bronze","Bronze"], sub:"Fully mod a vehicle (incl. color)" },
+      ]
+    },
+    {
+      group: "GTA Online — base", meta: "also on the Online tab",
+      items: [
+        { id:"vo34", title:"Off the Plane", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete the Online Introduction" },
+        { id:"vo35", title:"Three-Bit Gangster", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Reach Rank 25" },
+        { id:"vo36", title:"Making Moves", tag:["silver","Silver"], extraTag:["online",""], sub:"Reach Rank 50" },
+        { id:"vo37", title:"Above the Law", tag:["gold","Gold"], extraTag:["online",""], sub:"Reach Rank 100", detail:"The main RP grind, ~30-50 hrs. One of the 3 golds." },
+        { id:"vo38", title:"Numero Uno", tag:["bronze","Bronze"], extraTag:["online",""], sub:"1st place in all competitive game types" },
+        { id:"vo39", title:"The Midnight Club", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Win 5 races in custom (LS Customs) vehicles" },
+        { id:"vo40", title:"Unnatural Selection", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete all 10 waves of a Survival" },
+        { id:"vo41", title:"Backseat Driver", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Co-driver 1st place in Rally Mode" },
+        { id:"vo42", title:"Run Like the Wind", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Survive a full day with a bounty on you" },
+        { id:"vo43", title:"Clean Sweep", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Gang Attack, no deaths, 10+ kills" },
+        { id:"vo44", title:"Decorated", tag:["silver","Silver"], extraTag:["online",""], sub:"Earn 30 Platinum Awards" },
+        { id:"vo45", title:"Stick Up Kid", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Hold up all 20 stores" },
+        { id:"vo46", title:"Enjoy Your Stay", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Participate in everything Los Santos offers", detail:"Haircuts/tattoos/clothes/lap dance etc. Known bug can block it — spread out, redo a haircut if stuck." },
+        { id:"vo47", title:"Crew Cut", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete a Job as a Crew member" },
+        { id:"vo48", title:"Full Refund", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Kill the thief who mugged you" },
+        { id:"vo49", title:"Dialling Digits", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Call for gang backup for the first time" },
+        { id:"vo50", title:"American Dream", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Own an apartment, garage, and insured vehicle" },
+      ]
+    },
+    {
+      group: "GTA Online — Heists Update", meta: "9 trophies · also on Online tab",
+      items: [
+        { id:"vo52", title:"Be Prepared", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete a Heist Setup mission" },
+        { id:"vo53", title:"In the Name of Science", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete Humane Labs Raid + Series A (Leader or Crew)" },
+        { id:"vo54", title:"Dead Presidents", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete The Fleeca Job + Pacific Standard (Leader or Crew)" },
+        { id:"vo55", title:"Parole Day", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete The Prison Break (Leader or Crew)" },
+        { id:"vo56", title:"Shot Caller", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Invest cash to set up a Heist" },
+        { id:"vo57", title:"Four Way", tag:["bronze","Bronze"], extraTag:["online",""], sub:"As Heist Leader, set the finale cut 25% across all 4 players" },
+        { id:"vo58", title:"Live a Little", tag:["silver","Silver"], extraTag:["online",""], sub:"Spend $8,000,000 on Heists Update vehicles" },
+        { id:"vo59", title:"Can't Touch This", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete a Heist Finale without taking damage" },
+        { id:"vo60", title:"Mastermind", tag:["silver","Silver"], extraTag:["online",""], sub:"Earn 25 platinum medals across Heist Setups & Finales", detail:"Grind The Fleeca Job for platinum medals." },
+      ]
+    },
+    {
+      group: "Rockstar Editor", meta: "10 trophies · single-player-doable",
+      items: [
+        { id:"v61", title:"Vinewood Visionary", tag:["bronze","Bronze"], sub:"Create & export a video in Rockstar Editor" },
+        { id:"v62", title:"Majestic", tag:["silver","Silver"], sub:"Create & export 10 videos", detail:"Export 10 short clips — trivial, just tedious." },
+        { id:"v63", title:"Humans of Los Santos", tag:["bronze","Bronze"], sub:"Unlock all Special Characters + enter Director Mode as one" },
+        { id:"v64", title:"First Time Director", tag:["bronze","Bronze"], sub:"Enter Director Mode as an unlocked actor" },
+        { id:"v65", title:"Animal Lover", tag:["bronze","Bronze"], sub:"Enter Director Mode as an animal actor" },
+        { id:"v66", title:"Ensemble Piece", tag:["silver","Silver"], sub:"Unlock all Story Characters + enter Director Mode as one", detail:"Requires meeting all special street characters across the map." },
+        { id:"v67", title:"Cult Movie", tag:["bronze","Bronze"], sub:"Enter Director Mode as Cris Formage", detail:"Unlocks via the Epsilon/Kifflom path." },
+        { id:"v68", title:"Location Scout", tag:["bronze","Bronze"], sub:"Visit all locations in Director Mode" },
+        { id:"v69", title:"Method Actor", tag:["bronze","Bronze"], sub:"Enter Director Mode as your own GTA Online character" },
+        { id:"v70", title:"Cryptozoologist", tag:["silver","Silver"], sub:"Unlock all the animals", detail:"Unlock animals via the Peyote Plants (collect/become each animal). Tied to the 27 peyote plants." },
+      ]
+    },
+    {
+      group: "GTA Online — Doomsday Heist", meta: "8 trophies · the platinum gate · also on Online tab",
+      items: [
+        { id:"vo71", title:"Getting Started", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Set up The Doomsday Heist", detail:"Requires buying a Facility." },
+        { id:"vo72", title:"The Data Breaches", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Complete Act I (Leader or Crew)" },
+        { id:"vo73", title:"The Bogdan Problem", tag:["silver","Silver"], extraTag:["online",""], sub:"Complete Act II (Leader or Crew)" },
+        { id:"vo74", title:"The Doomsday Scenario", tag:["silver","Silver"], extraTag:["online",""], sub:"Complete Act III (Leader or Crew)" },
+        { id:"vo75", title:"A World Worth Saving", tag:["silver","Silver"], extraTag:["online",""], sub:"Complete the whole Doomsday Heist (Leader or Crew)" },
+        { id:"vo76", title:"Orbital Obliteration", tag:["bronze","Bronze"], extraTag:["online",""], sub:"Kill another player with the Orbital Cannon", detail:"Buy the Orbital Cannon upgrade for your Facility." },
+        { id:"vo77", title:"Elitist", tag:["silver","Silver"], extraTag:["online",""], sub:"Complete all 3 Doomsday Elite Challenges" },
+        { id:"vo78", title:"Masterminds", tag:["silver","Silver"], extraTag:["online",""], sub:"All 3 Criminal Mastermind challenges (no deaths, same crew, hard, teams of 2/3/4)", detail:"One of the hardest trophies in the game. Dedicated team required; progress tracker is buggy — follow a current method to avoid resets." },
+      ]
+    },
+  ],
+
+  online: [
+    {
+      group: "Ranks", meta: "RP grind",
+      items: [
+        { id:"vo34", title:"Off the Plane — complete the Intro", tag:["online",""], sub:"", est:"~20 min" },
+        { id:"vo35", title:"Three-Bit Gangster — Rank 25", tag:["online",""], sub:"", est:"~3 hrs" },
+        { id:"vo36", title:"Making Moves — Rank 50", tag:["online",""], sub:"", est:"~6 hrs" },
+        { id:"vo37", title:"Above the Law — Rank 100", tag:["online",""], sub:"The big RP grind (Gold)", est:"~30-50 hrs", detail:"Prioritize RP over cash. Contact missions, business battles, daily objectives. Dominates the Online timeline." },
+      ]
+    },
+    {
+      group: "Property & economy", meta: "",
+      items: [
+        { id:"vo50", title:"American Dream — apartment + garage + insured car", tag:["online",""], sub:"", est:"~1 hr" },
+      ]
+    },
+    {
+      group: "Competitive & combat", meta: "",
+      items: [
+        { id:"vo38", title:"Numero Uno — 1st in all competitive types", tag:["online",""], sub:"Races, parachute, deathmatch, arm wrestling, golf, tennis, darts, etc.", est:"~4 hrs", detail:"Coordinate private/boosted lobbies for the PvP ones." },
+        { id:"vo39", title:"The Midnight Club — 5 wins in a modded car", tag:["online",""], sub:"", est:"~1 hr" },
+        { id:"vo40", title:"Unnatural Selection — 10 Survival waves", tag:["online",""], sub:"Boneyard recommended", est:"~45 min" },
+        { id:"vo41", title:"Backseat Driver — Rally co-driver win", tag:["online",""], sub:"Needs a 2nd player", est:"~30 min" },
+        { id:"vo43", title:"Clean Sweep — Gang Attack, no deaths, 10+ kills", tag:["online",""], sub:"", est:"~20 min" },
+        { id:"vo44", title:"Decorated — 30 Platinum Awards", tag:["online",""], sub:"Easiest: haircuts, clothes, tattoos, lap dances + activity awards", est:"~2 hrs" },
+      ]
+    },
+    {
+      group: "One-offs & misc", meta: "",
+      items: [
+        { id:"vo45", title:"Stick Up Kid — hold up all 20 stores", tag:["online",""], sub:"", est:"~1.5 hrs" },
+        { id:"vo46", title:"Enjoy Your Stay — do everything LS offers", tag:["online",""], sub:"Haircuts/tattoos/clothes/lap dance etc.", est:"~1 hr", detail:"Known bug can block it — spread out and redo a haircut/tattoo if it won't pop." },
+        { id:"vo42", title:"Run Like the Wind — survive a day with a bounty", tag:["online",""], sub:"Hide in a remote/passive spot", est:"~50 min" },
+        { id:"vo47", title:"Crew Cut — complete a Job in a Crew", tag:["online",""], sub:"Join any Crew first", est:"~15 min" },
+        { id:"vo48", title:"Full Refund — kill the mugger who robbed you", tag:["online",""], sub:"Wait to be mugged, then retaliate", est:"varies" },
+        { id:"vo49", title:"Dialling Digits — first gang-backup call", tag:["online",""], sub:"Via interaction menu", est:"~5 min" },
+      ]
+    },
+    {
+      group: "Heists Update", meta: "9 trophies",
+      items: [
+        { id:"vo52", title:"Be Prepared — complete a Heist Setup", tag:["online",""], sub:"", est:"~30 min" },
+        { id:"vo56", title:"Shot Caller — invest to set up a Heist", tag:["online",""], sub:"Needs a high-end apartment w/ heist planning", est:"~30 min" },
+        { id:"vo55", title:"Parole Day — The Prison Break", tag:["online",""], sub:"Leader or Crew", est:"~1 hr" },
+        { id:"vo53", title:"In the Name of Science — Humane Labs + Series A", tag:["online",""], sub:"Leader or Crew", est:"~2 hrs" },
+        { id:"vo54", title:"Dead Presidents — Fleeca + Pacific Standard", tag:["online",""], sub:"Leader or Crew", est:"~2 hrs" },
+        { id:"vo57", title:"Four Way — finale cut 25% across 4 players", tag:["online",""], sub:"As Heist Leader", est:"~varies" },
+        { id:"vo58", title:"Live a Little — spend $8M on Heists vehicles", tag:["online",""], sub:"", est:"grind" },
+        { id:"vo59", title:"Can't Touch This — heist finale, no damage", tag:["online",""], sub:"", est:"~1 hr" },
+        { id:"vo60", title:"Mastermind — 25 platinum heist medals", tag:["online",""], sub:"Grind The Fleeca Job", est:"~3 hrs" },
+      ]
+    },
+    {
+      group: "Doomsday Heist", meta: "8 trophies · platinum gate",
+      items: [
+        { id:"vo71", title:"Getting Started — set up Doomsday (buy Facility)", tag:["online",""], sub:"", est:"~30 min" },
+        { id:"vo72", title:"The Data Breaches — Act I", tag:["online",""], sub:"Leader or Crew", est:"~2 hrs" },
+        { id:"vo73", title:"The Bogdan Problem — Act II", tag:["online",""], sub:"Leader or Crew", est:"~2 hrs" },
+        { id:"vo74", title:"The Doomsday Scenario — Act III", tag:["online",""], sub:"Leader or Crew", est:"~3 hrs" },
+        { id:"vo75", title:"A World Worth Saving — full Doomsday", tag:["online",""], sub:"Auto once all 3 acts done", est:"-" },
+        { id:"vo76", title:"Orbital Obliteration — orbital cannon kill", tag:["online",""], sub:"Buy the cannon upgrade", est:"~20 min" },
+        { id:"vo77", title:"Elitist — all 3 Elite Challenges", tag:["online",""], sub:"", est:"~3 hrs" },
+        { id:"vo78", title:"Masterminds — all 3 Criminal Mastermind challenges", tag:["online",""], sub:"No deaths, same crew, hard, teams of 2/3/4", est:"~10-20 hrs", detail:"The single biggest platinum gate beside Rank 100. Buggy tracker — use a current method and a committed team." },
+      ]
+    },
+  ],
+};
+
+const STORAGE_KEY = "gtaV_tracker_v1";
+let state = {};
+try { state = JSON.parse(localStorage.getItem(STORAGE_KEY)) || {}; } catch(e) { state = {}; }
+
+function save() {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(state)); showToast("Saved"); }
+  catch(e) { document.getElementById("saveNote").textContent = "Save failed (storage blocked)"; }
+}
+let toastTimer;
+function showToast(msg) {
+  const t = document.getElementById("toast");
+  t.textContent = msg; t.classList.add("show");
+  clearTimeout(toastTimer); toastTimer = setTimeout(()=>t.classList.remove("show"), 1100);
+}
+
+// Online trophy ids that should mirror the same checkbox state as the trophy tab
+function buildView(type, containerId) {
+  const container = document.getElementById(containerId);
+  container.innerHTML = "";
+  DATA[type].forEach((grp, gi) => {
+    const det = document.createElement("details");
+    det.className = "group"; det.open = false;
+    // Mark whole GTA Online sections so they read as Online at a glance.
+    const isOnlineGroup = (type === "online") || /GTA Online/i.test(grp.group);
+    if (isOnlineGroup) det.classList.add("online-group");
+    const sum = document.createElement("summary");
+    sum.className = "group-head";
+    const onlineBadge = (type !== "online" && isOnlineGroup) ? `<span class="tag online" style="margin-left:.5rem">Online</span>` : "";
+    sum.innerHTML = `<span class="chev">▶</span><span class="g-name">${grp.group}${onlineBadge}</span><span class="g-meta">${grp.meta||""}</span><span class="g-prog" data-grpprog="${type}-${gi}">0/${grp.items.length}</span>`;
+    det.appendChild(sum);
+    const body = document.createElement("div"); body.className = "group-body";
+    grp.items.forEach(it => {
+      const row = document.createElement("div");
+      row.className = "item"; row.dataset.id = it.id;
+      if (state[it.id]) row.classList.add("checked");
+      let tagHtml = "";
+      if (it.tag && it.tag[1]) tagHtml += `<span class="tag ${it.tag[0]}">${it.tag[1]}</span>`;
+      if (it.extraTag) {
+        // On the Online tab the ONLINE tag is redundant (whole tab is online), so skip it there.
+        const isOnlineTagOnOnlineTab = (type === "online" && it.extraTag[0] === "online");
+        if (!isOnlineTagOnOnlineTab) {
+          const lbl = it.extraTag[1] || (it.extraTag[0]==="miss" ? "Missable" : it.extraTag[0]==="online" ? "Online" : "");
+          if (lbl) tagHtml += `<span class="tag ${it.extraTag[0]}">${lbl}</span>`;
+        }
+      }
+      const estHtml = it.est ? `<span class="est">${it.est}</span>` : "";
+      let detailHtml = "";
+      if (it.detail) detailHtml = `<button class="toggle-detail" data-toggle="${it.id}">Show steps</button><div class="detail hidden" id="detail-${type}-${it.id}">${it.detail}</div>`;
+      row.innerHTML = `<label><input type="checkbox" data-cb="${it.id}" ${state[it.id]?"checked":""}><span class="item-main"><span class="item-titleRow"><span class="item-title">${it.title}</span>${tagHtml}</span>${it.sub?`<span class="item-sub">${it.sub}</span>`:""}${detailHtml}</span></label>${estHtml}`;
+      body.appendChild(row);
+    });
+    det.appendChild(body); container.appendChild(det);
+  });
+}
+
+function recalc() {
+  // completion bar = completion tab only
+  // trophy bar = trophy tab only (online trophies live inside trophy tab already)
+  ["completion","trophy","online"].forEach(type => {
+    DATA[type].forEach((grp, gi) => {
+      let gDone = 0;
+      grp.items.forEach(it => { if (state[it.id]) gDone++; });
+      const badge = document.querySelector(`[data-grpprog="${type}-${gi}"]`);
+      if (badge) { badge.textContent = `${gDone}/${grp.items.length}`; badge.classList.toggle("done", gDone===grp.items.length && grp.items.length>0); }
+    });
+  });
+  // Completion bar
+  let cTotal=0,cDone=0;
+  DATA.completion.forEach(g=>g.items.forEach(it=>{cTotal++; if(state[it.id])cDone++;}));
+  let cp = cTotal?Math.round(cDone/cTotal*100):0;
+  document.getElementById("pctCompletion").textContent = cp+"%";
+  document.getElementById("fillCompletion").style.width = cp+"%";
+  document.getElementById("countCompletion").textContent = `${cDone} / ${cTotal} items`;
+  // Trophy bar (unique trophy ids)
+  const trophyIds = new Set();
+  DATA.trophy.forEach(g=>g.items.forEach(it=>trophyIds.add(it.id)));
+  let tDone=0; trophyIds.forEach(id=>{ if(state[id]) tDone++; });
+  let tp = trophyIds.size?Math.round(tDone/trophyIds.size*100):0;
+  document.getElementById("pctTrophy").textContent = tp+"%";
+  document.getElementById("fillTrophy").style.width = tp+"%";
+  document.getElementById("countTrophy").textContent = `${tDone} / ${trophyIds.size} trophies`;
+}
+
+document.addEventListener("change", e => {
+  if (e.target.matches("[data-cb]")) {
+    const id = e.target.dataset.cb;
+    const checked = e.target.checked;
+    if (checked) state[id] = true; else delete state[id];
+    // sync any other checkbox with same id across tabs (online trophies appear twice)
+    document.querySelectorAll(`[data-cb="${id}"]`).forEach(cb => {
+      cb.checked = checked;
+      cb.closest(".item").classList.toggle("checked", checked);
+    });
+    save(); recalc();
+  }
+});
+document.addEventListener("click", e => {
+  if (e.target.matches("[data-toggle]")) {
+    e.preventDefault();
+    const btn = e.target;
+    const d = btn.parentElement.querySelector(".detail");
+    const hidden = d.classList.toggle("hidden");
+    btn.textContent = hidden ? "Show steps" : "Hide steps";
+  }
+});
+document.querySelectorAll(".tab").forEach(tab => {
+  tab.addEventListener("click", () => {
+    document.querySelectorAll(".tab").forEach(t=>t.classList.remove("active"));
+    document.querySelectorAll(".view").forEach(v=>v.classList.remove("active"));
+    tab.classList.add("active");
+    document.getElementById("view-"+tab.dataset.view).classList.add("active");
+  });
+});
+document.getElementById("expandAll").onclick = () => document.querySelectorAll(".view.active details.group").forEach(d=>d.open=true);
+document.getElementById("collapseAll").onclick = () => document.querySelectorAll(".view.active details.group").forEach(d=>d.open=false);
+let detailsShown=false;
+document.getElementById("toggleAllDetails").onclick = e => {
+  detailsShown=!detailsShown;
+  document.querySelectorAll(".view.active .detail").forEach(d=>d.classList.toggle("hidden",!detailsShown));
+  document.querySelectorAll(".view.active [data-toggle]").forEach(b=>b.textContent=detailsShown?"Hide steps":"Show steps");
+  e.target.textContent = detailsShown?"Hide all details":"Show all details";
+};
+document.getElementById("reset").onclick = () => {
+  if (confirm("Reset all progress on all tabs? This can't be undone.")) {
+    state={}; save();
+    buildView("completion","completionGroups"); buildView("trophy","trophyGroups"); buildView("online","onlineGroups");
+    recalc();
+  }
+};
+// Export / Import
+document.getElementById("exportBtn").onclick = () => {
+  const blob = new Blob([JSON.stringify(state,null,2)], {type:"application/json"});
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url; a.download = "gta-v-progress.json"; a.click();
+  URL.revokeObjectURL(url); showToast("Exported");
+};
+document.getElementById("importBtn").onclick = () => document.getElementById("importFile").click();
+document.getElementById("importFile").onchange = e => {
+  const file = e.target.files[0]; if(!file) return;
+  const r = new FileReader();
+  r.onload = () => {
+    try {
+      const imported = JSON.parse(r.result);
+      if (typeof imported === "object" && imported) {
+        state = imported; save();
+        buildView("completion","completionGroups"); buildView("trophy","trophyGroups"); buildView("online","onlineGroups");
+        recalc(); showToast("Imported");
+      }
+    } catch(err) { alert("Could not read that file — make sure it's a progress JSON exported from this tracker."); }
+  };
+  r.readAsText(file);
+  e.target.value = "";
+};
+
+buildView("completion","completionGroups");
+buildView("trophy","trophyGroups");
+buildView("online","onlineGroups");
+recalc();
+</script>
+</body>
+</html>
